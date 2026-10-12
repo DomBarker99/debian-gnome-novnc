@@ -54,9 +54,26 @@ with socket.create_connection(('127.0.0.1',16080),timeout=10) as sock:
 print('Browser WebSocket endpoint verified.')
 PY
 
+# A claimed window manager can precede the first completed GNOME frame. Launch
+# a real application through the existing session, then wait for rendered pixels.
+docker exec "$first" bash -c '
+export DBUS_SESSION_BUS_ADDRESS=$(< "$XDG_RUNTIME_DIR/session-bus.address")
+gnome-terminal --title="Developer image smoke test" -- bash -c "echo Debian 13 GNOME developer desktop; echo; node --version; echo; echo Persistent home: /home/desktop; sleep 600"
+'
 docker cp tests/vnc_probe.py "$first:/tmp/vnc_probe.py"
-docker exec -e VNC_TEST_PASSWORD="$password" "$first" python3 /tmp/vnc_probe.py
-docker cp "$first:/tmp/gnome-framebuffer.png" "$artifacts/gnome-framebuffer.png"
+rendered=false
+for ((attempt=0; attempt<45; attempt++)); do
+    if docker exec -e VNC_TEST_PASSWORD="$password" "$first" python3 /tmp/vnc_probe.py > "$artifacts/vnc-probe.log" 2>&1; then
+        rendered=true
+        break
+    fi
+    sleep 2
+done
+docker cp "$first:/tmp/gnome-framebuffer.png" "$artifacts/gnome-framebuffer.png" || true
+if [[ $rendered != true ]]; then
+    echo 'Authenticated VNC did not produce a rendered desktop/application within 90 seconds.' >&2
+    exit 1
+fi
 
 docker exec -e PI_OFFLINE=1 -e PI_SKIP_VERSION_CHECK=1 "$first" bash -c '
 set -Eeuo pipefail

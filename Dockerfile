@@ -32,7 +32,7 @@ RUN useradd --uid 1000 --user-group --create-home --shell /bin/bash desktop \
     && chmod 0440 /etc/sudoers.d/desktop \
     && visudo --check \
     && install -d -o desktop -g desktop /home/desktop/projects \
-    && install -d -m 1777 /tmp/.X11-unix
+    && install -d -m 1777 /tmp/.X11-unix /tmp/.ICE-unix
 COPY scripts/system-bus.conf /usr/local/share/debian-gnome-novnc/system-bus.conf
 COPY --chmod=0755 scripts/start-desktop.sh /usr/local/bin/start-desktop
 COPY --chmod=0755 scripts/gnome-session.sh /usr/local/libexec/desktop-session

@@ -25,7 +25,7 @@ Heavy ML/model stacks, extra agents, provider-specific cloud CLIs, virtualizatio
 
 ## Run a desktop locally
 
-Create a password file outside this repository. Classic VNC authentication supports only eight bytes, so this image requires **exactly eight non-space printable ASCII characters** and rejects silent truncation. There is no default password.
+Create a password file outside this repository, readable by container UID/GID 1000. For Kubernetes, use a Secret mounted with suitable group ownership and restrictive permissions; do not make a private host file world-readable simply to bypass ownership errors. Classic VNC authentication supports only eight bytes, so this image requires **exactly eight non-space printable ASCII characters** and rejects silent truncation. There is no default password.
 
 For a password file already at `/absolute/private/path/vnc-password`:
 
@@ -88,7 +88,7 @@ Use `pi` in place of `codex` for Pi. Desktop-only health checks do not apply to 
 docker build --platform linux/amd64 -t debian-gnome-novnc:local .
 ```
 
-CI builds on pushes to `main`, pull requests, manual dispatch and a weekly schedule. It checks GNOME Shell's window manager, authenticated VNC framebuffer rendering, HTTP/WebSocket noVNC access, developer tools and Python imports, then replaces the test container to verify persistent home. Test screenshots and logs are retained as short-lived Actions artifacts.
+CI builds on pushes to `main`, pull requests, manual dispatch and a weekly schedule. It checks GNOME Shell's window manager, a real GNOME Terminal launch, authenticated VNC framebuffer rendering, HTTP/WebSocket noVNC access, developer tools and Python document generation, then replaces the test container to verify persistent home. Test screenshots and logs are retained as short-lived Actions artifacts.
 
 Only a successfully tested image is pushed to GHCR, under `13`, `latest` and a commit-specific `sha-…` tag. The first push creates the GHCR package. GitHub initially makes the package private; its visibility must be changed to public once in package settings. This cannot subsequently be reversed to private.
 

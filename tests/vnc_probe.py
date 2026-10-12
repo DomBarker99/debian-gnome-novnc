@@ -68,8 +68,8 @@ with socket.create_connection(('127.0.0.1', 5901), timeout=20) as sock:
             receive(sock, length)
             continue
         raise RuntimeError(f'Unexpected VNC message type: {message}')
-    colors = canvas.resize((160, 100)).getcolors(16000)
-    assert colors and len(colors) > 64, 'Desktop framebuffer is blank or not rendered'
     target = Path('/tmp/gnome-framebuffer.png')
     canvas.save(target)
-    print(f'Authenticated VNC; rendered {width}x{height} framebuffer, {len(colors)} sampled colors.')
+    colors = canvas.resize((160, 100)).getcolors(16000)
+    print(f'Authenticated VNC; {width}x{height} framebuffer, {len(colors) if colors else 0} sampled colors.')
+    assert colors and len(colors) > 64, 'Desktop framebuffer is blank or not rendered'
