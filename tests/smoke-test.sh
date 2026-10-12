@@ -60,6 +60,19 @@ docker exec "$first" bash -c '
 export DBUS_SESSION_BUS_ADDRESS=$(< "$XDG_RUNTIME_DIR/session-bus.address")
 gnome-terminal --title="Developer image smoke test" -- bash -c "echo Debian 13 GNOME developer desktop; echo; node --version; echo; echo Persistent home: /home/desktop; sleep 600"
 '
+terminal_ready=false
+for ((attempt=0; attempt<30; attempt++)); do
+    if docker exec "$first" bash -c '\
+        for window in $(xprop -root _NET_CLIENT_LIST | grep -oE "0x[[:xdigit:]]+"); do
+            if xprop -id "$window" _NET_WM_NAME | grep -F "Developer image smoke test" >/dev/null; then exit 0; fi
+        done
+        exit 1'; then
+        terminal_ready=true
+        break
+    fi
+    sleep 2
+done
+[[ $terminal_ready == true ]] || { echo 'GNOME Terminal did not create its application window.' >&2; exit 1; }
 docker cp tests/vnc_probe.py "$first:/tmp/vnc_probe.py"
 rendered=false
 for ((attempt=0; attempt<45; attempt++)); do
@@ -135,7 +148,14 @@ printf "persistent config proof\n" > "$HOME/.config/image-smoke/config.txt"
 
 # Replace the container, retaining only home: this simulates Pod replacement.
 docker stop --time 30 "$first" >/dev/null
-docker run -d --name "$second" --shm-size=1g -e VNC_PASSWORD="$password" \
+printf '%s' "$password" > "$work/vnc-password"
+chmod 0600 "$work/vnc-password"
+sudo chown 1000:1000 "$work/vnc-password"
+# The enclosing mktemp directory is private on the host; the test mount is
+# read-only. Real deployments should use a managed Secret, not this test file.
+docker run -d --name "$second" --shm-size=1g \
+    -e VNC_PASSWORD_FILE=/run/secrets/vnc-password \
+    --mount "type=bind,source=$work/vnc-password,target=/run/secrets/vnc-password,readonly" \
     --mount "type=bind,source=$work/home,target=/home/desktop" "$image" >/dev/null
 containers+=("$second")
 for ((attempt=0; attempt<180; attempt++)); do

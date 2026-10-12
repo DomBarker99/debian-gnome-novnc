@@ -91,5 +91,10 @@ jobs:
             echo '### Tested image published'
             echo "Image: \`$IMAGE:13\`"
             echo "Commit tag: \`$IMAGE:sha-${{ steps.metadata.outputs.short_sha }}\`"
-            echo 'First publication creates a private GHCR package; set its visibility to public once in package settings.'
+            echo 'The following anonymous-access check verifies package readability independently of repository visibility.'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify anonymous GHCR access and image configuration
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: python3 tests/verify-publication.py "$IMAGE:13"

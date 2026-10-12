@@ -5,6 +5,7 @@ from pathlib import Path
 import socket
 import struct
 import subprocess
+import time
 from PIL import Image
 
 password = os.environ['VNC_TEST_PASSWORD'].encode('ascii')
@@ -43,6 +44,11 @@ with socket.create_connection(('127.0.0.1', 5901), timeout=20) as sock:
     name_length = struct.unpack('>I', receive(sock, 4))[0]
     receive(sock, name_length)
     assert 640 <= width <= 4096 and 480 <= height <= 2160
+    # Exercise keyboard input and leave GNOME's initial overview so the launched
+    # terminal is visible in the actual VNC frame, not only registered with X11.
+    for down in (1, 0):
+        sock.sendall(struct.pack('>BBHI', 4, down, 0, 0xFF1B))  # Escape.
+    time.sleep(1)
     sock.sendall(struct.pack('>BxxxBBBBHHHBBBxxx', 0, 32, 24, 0, 1, 255, 255, 255, 16, 8, 0))
     sock.sendall(struct.pack('>BBHi', 2, 0, 1, 0))  # Raw encoding.
     sock.sendall(struct.pack('>BBHHHH', 3, 0, 0, 0, width, height))
