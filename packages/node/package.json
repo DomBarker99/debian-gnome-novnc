@@ -1,0 +1,13 @@
+{
+  "name": "debian-gnome-novnc-cli-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned CLI tools installed in the container, with no credentials or project source",
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "1.1.0",
+    "@openai/codex": "0.162.1",
+    "pnpm": "11.22.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

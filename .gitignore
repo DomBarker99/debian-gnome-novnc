@@ -1,0 +1,9 @@
+# Generated local build and test output is not source.
+.env
+.env.*
+*.log
+*.png
+__pycache__/
+node_modules/
+.venv/
+artifacts/

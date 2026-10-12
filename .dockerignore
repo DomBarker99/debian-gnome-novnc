@@ -1,0 +1,12 @@
+# Build context allowlist: never send local credentials, home files or Git state.
+*
+!Dockerfile
+!versions.env
+!packages/
+!packages/apt.txt
+!packages/python.txt
+!packages/node/
+!packages/node/package.json
+!packages/node/package-lock.json
+!scripts/
+!scripts/*.sh
