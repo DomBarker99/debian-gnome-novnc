@@ -66,7 +66,7 @@ Runtime system-wide APT installs modify the container's disposable filesystem an
 
 Preinstalled Rust toolchains live in `/opt/rustup`; Cargo's user cache stays in home. Update the image for new system SDK versions. A separately configured user Rustup installation is another option when persistent per-user toolchains are required.
 
-`desktop` has passwordless sudo **inside the container** for development convenience. Do not use privileged mode or mount the host Docker socket simply to make tools work. The container is not a VM: hardware control, display managers, systemd-managed services and some desktop settings may be unavailable.
+`desktop` has passwordless sudo **inside the container** for development convenience. Do not use privileged mode or mount the host Docker socket simply to make tools work. The container is not a VM: hardware control, display managers, systemd-managed services and some desktop settings may be unavailable. GNOME uses a container-local system-type D-Bus instance; it does not connect to the host bus or activate privileged host services.
 
 A 5 GiB home volume is suitable for a small test but may be insufficient for multiple development projects, dependency caches and build outputs. The image itself uses the node's image storage, not the home PVC.
 

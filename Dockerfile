@@ -3,15 +3,6 @@ FROM debian:13
 
 ARG TARGETARCH=amd64
 ARG APT_REFRESH=manual
-ARG IMAGE_REVISION=unknown
-ARG BUILD_DATE=unknown
-LABEL org.opencontainers.image.title="Debian 13 GNOME noVNC developer desktop" \
-      org.opencontainers.image.description="Full GNOME, development SDKs, Codex CLI and Pi; authenticated browser access." \
-      org.opencontainers.image.source="https://github.com/DomBarker99/debian-gnome-novnc" \
-      org.opencontainers.image.documentation="https://github.com/DomBarker99/debian-gnome-novnc/blob/main/usage.md" \
-      org.opencontainers.image.revision="${IMAGE_REVISION}" \
-      org.opencontainers.image.created="${BUILD_DATE}"
-
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 COPY packages/apt.txt /usr/local/share/debian-gnome-novnc/packages/apt.txt
 # Cache mounts keep downloaded build data out of the final image without
@@ -40,10 +31,22 @@ RUN useradd --uid 1000 --user-group --create-home --shell /bin/bash desktop \
     && printf 'desktop ALL=(ALL) NOPASSWD:ALL\n' > /etc/sudoers.d/desktop \
     && chmod 0440 /etc/sudoers.d/desktop \
     && visudo --check \
-    && install -d -o desktop -g desktop /home/desktop/projects
+    && install -d -o desktop -g desktop /home/desktop/projects \
+    && install -d -m 1777 /tmp/.X11-unix
+COPY scripts/system-bus.conf /usr/local/share/debian-gnome-novnc/system-bus.conf
 COPY --chmod=0755 scripts/start-desktop.sh /usr/local/bin/start-desktop
 COPY --chmod=0755 scripts/gnome-session.sh /usr/local/libexec/desktop-session
 COPY --chmod=0755 scripts/healthcheck.sh /usr/local/bin/desktop-healthcheck
+
+# Metadata changes must not invalidate the expensive APT/SDK build steps.
+ARG IMAGE_REVISION=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="Debian 13 GNOME noVNC developer desktop" \
+      org.opencontainers.image.description="Full GNOME, development SDKs, Codex CLI and Pi; authenticated browser access." \
+      org.opencontainers.image.source="https://github.com/DomBarker99/debian-gnome-novnc" \
+      org.opencontainers.image.documentation="https://github.com/DomBarker99/debian-gnome-novnc/blob/main/usage.md" \
+      org.opencontainers.image.revision="${IMAGE_REVISION}" \
+      org.opencontainers.image.created="${BUILD_DATE}"
 
 ENV HOME=/home/desktop \
     LANG=en_US.UTF-8 \
@@ -51,6 +54,7 @@ ENV HOME=/home/desktop \
     DISPLAY=:1 \
     XDG_RUNTIME_DIR=/tmp/gnome-runtime-1000 \
     XAUTHORITY=/tmp/gnome-runtime-1000/Xauthority \
+    DBUS_SYSTEM_BUS_ADDRESS=unix:path=/tmp/gnome-runtime-1000/system-bus \
     XDG_SESSION_TYPE=x11 \
     XDG_SESSION_CLASS=user \
     XDG_CURRENT_DESKTOP=GNOME \

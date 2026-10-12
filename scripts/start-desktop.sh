@@ -50,6 +50,18 @@ stop_children() {
 trap stop_children EXIT
 trap 'exit 0' INT TERM
 
+# GNOME requires a system-bus connection even without systemd. This bus is
+# private to this container/user; it cannot activate privileged host services.
+dbus-daemon --config-file=/usr/local/share/debian-gnome-novnc/system-bus.conf \
+    --nofork --nopidfile --nosyslog &
+pids+=("$!")
+for ((attempt=0; attempt<30; attempt++)); do
+    if [[ -S "$XDG_RUNTIME_DIR/system-bus" ]]; then break; fi
+    kill -0 "${pids[0]}" 2>/dev/null || { echo 'Container D-Bus exited.' >&2; exit 1; }
+    sleep 1
+done
+[[ -S "$XDG_RUNTIME_DIR/system-bus" ]] || { echo 'Container D-Bus did not become ready.' >&2; exit 1; }
+
 # Native VNC never listens on the container network interface.
 Xtigervnc "$DISPLAY" -geometry "$resolution" -depth 24 -localhost yes \
     -SecurityTypes VncAuth -PasswordFile "$XDG_RUNTIME_DIR/vnc.passwd" \
@@ -57,7 +69,7 @@ Xtigervnc "$DISPLAY" -geometry "$resolution" -depth 24 -localhost yes \
 pids+=("$!")
 for ((attempt=0; attempt<60; attempt++)); do
     if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then break; fi
-    kill -0 "${pids[0]}" 2>/dev/null || { echo 'VNC display server exited.' >&2; exit 1; }
+    kill -0 "${pids[1]}" 2>/dev/null || { echo 'VNC display server exited.' >&2; exit 1; }
     sleep 1
 done
 xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 || { echo 'VNC display did not become ready.' >&2; exit 1; }

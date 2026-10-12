@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+printf '%s\n' "$DBUS_SESSION_BUS_ADDRESS" > "$XDG_RUNTIME_DIR/session-bus.address"
 # Container accounts have no PAM login password, so screen locking would strand
 # the session. Browser/VNC authentication remains mandatory at the boundary.
 gsettings set org.gnome.desktop.screensaver lock-enabled false

@@ -10,3 +10,4 @@
 !packages/node/package-lock.json
 !scripts/
 !scripts/*.sh
+!scripts/system-bus.conf
