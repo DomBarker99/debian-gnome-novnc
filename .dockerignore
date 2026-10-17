@@ -5,9 +5,9 @@
 !packages/
 !packages/apt.txt
 !packages/python.txt
-!packages/node/
-!packages/node/package.json
-!packages/node/package-lock.json
 !scripts/
 !scripts/*.sh
-!scripts/system-bus.conf
+!config/
+!config/*
+!assets/
+!assets/*

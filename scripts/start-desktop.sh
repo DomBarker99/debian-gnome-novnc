@@ -52,7 +52,7 @@ trap 'exit 0' INT TERM
 
 # GNOME requires a system-bus connection even without systemd. This bus is
 # private to this container/user; it cannot activate privileged host services.
-dbus-daemon --config-file=/usr/local/share/debian-gnome-novnc/system-bus.conf \
+dbus-daemon --config-file=/usr/local/share/tully-agent/system-bus.conf \
     --nofork --nopidfile --nosyslog &
 pids+=("$!")
 for ((attempt=0; attempt<30; attempt++)); do

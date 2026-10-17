@@ -1,0 +1,5 @@
+# Also runs for noninteractive SSH commands, before Debian's interactive-only guard.
+. /etc/profile.d/agent.sh
+if [ -f /etc/skel/.bashrc ]; then
+    . /etc/skel/.bashrc
+fi

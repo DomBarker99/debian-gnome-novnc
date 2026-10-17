@@ -32,7 +32,13 @@ config_body, _ = fetch(f'blobs/{manifest["config"]["digest"]}', 'application/oct
 assert manifest['config']['digest'] == 'sha256:' + hashlib.sha256(config_body).hexdigest()
 config = json.loads(config_body)
 assert config['os'] == 'linux' and config['architecture'] == 'amd64'
-assert config['config']['User'] == '1000:1000'
+# sshd/bootstrap starts as root; entrypoint drops desktop/tools to UID 1000.
+assert config['config']['User'] == '0:0'
+assert config['config']['Entrypoint'] == ['/usr/bin/tini', '-g', '--', '/usr/local/bin/agent-entrypoint']
+assert config['config']['WorkingDir'] == '/'
+assert {'22/tcp', '6080/tcp'} <= config['config']['ExposedPorts'].keys()
+assert config['config']['Labels']['org.opencontainers.image.source'] == 'https://github.com/DomBarker99/debian-gnome-novnc'
+assert config['config']['Labels']['org.opencontainers.image.revision'] != 'unknown'
 assert not any(value.startswith(('VNC_PASSWORD=', 'VNC_PASSWORD_FILE=')) for value in config['config']['Env'])
 print(json.dumps({
     'image': image,
@@ -40,5 +46,7 @@ print(json.dumps({
     'digest': digest,
     'compressed_layer_bytes': sum(layer['size'] for layer in manifest['layers']),
     'platform': 'linux/amd64',
-    'desktop_user': config['config']['User'],
+    'bootstrap_user': config['config']['User'],
+    'desktop_user': '1000:1000 (verified by runtime smoke test)',
+    'source_revision': config['config']['Labels']['org.opencontainers.image.revision'],
 }, indent=2))

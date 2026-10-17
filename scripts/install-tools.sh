@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-source /usr/local/share/debian-gnome-novnc/versions.env
+source /usr/local/share/tully-agent/versions.env
 [[ $(dpkg --print-architecture) == amd64 ]] || { echo 'This image currently targets Linux/amd64.' >&2; exit 1; }
 work=$(mktemp -d /tmp/image-tools.XXXXXX)
 
@@ -25,7 +25,7 @@ ln -s "$python_bin" /usr/local/bin/python3
 # Only the isolated /opt Python is modified; Debian /usr/bin/python3 stays intact.
 uv pip install --python "$python_bin" --system --break-system-packages \
     --only-binary=numpy,scipy,matplotlib,lxml,Pillow,pandas \
-    --requirement /usr/local/share/debian-gnome-novnc/packages/python.txt
+    --requirement /usr/local/share/tully-agent/packages/python.txt
 ln -s "$(dirname "$python_bin")/pip" /usr/local/bin/pip
 ln -s "$(dirname "$python_bin")/pip3" /usr/local/bin/pip3
 
@@ -59,6 +59,43 @@ gzip -dc "$work/tree-sitter.gz" > /usr/local/bin/tree-sitter
 chmod 0755 /usr/local/bin/tree-sitter
 ln -s /usr/bin/fdfind /usr/local/bin/fd
 
-npm ci --prefix /opt/node-cli --ignore-scripts --omit=dev --no-audit --no-fund --registry=https://registry.npmjs.org
-# Record the actual Debian packages without copying any host inventory or state.
-dpkg-query -W -f='${Package}\t${Version}\n' > /usr/local/share/debian-gnome-novnc/debian-package-versions.tsv
+# Developer CLIs stay system-wide; Pi/Codex use a standard npm-global seed.
+# First boot copies each agent package into the user's persistent ~/.local prefix.
+npm install -g --prefix /usr/local --ignore-scripts --no-audit --no-fund \
+    "pnpm@$PNPM_VERSION" "tsx@$TSX_VERSION" "typescript@$TYPESCRIPT_VERSION"
+npm install -g --prefix /usr/local/share/agent-cli-seed --ignore-scripts --include=optional --no-audit --no-fund \
+    "@earendil-works/pi-coding-agent@$PI_VERSION" "@openai/codex@$CODEX_VERSION"
+
+# Binary only: do not run Railway's optional agent/MCP setup installer.
+fetch "https://github.com/railwayapp/cli/releases/download/v${RAILWAY_VERSION}/railway-v${RAILWAY_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+    "$RAILWAY_SHA256" "$work/railway.tar.gz"
+tar -xzf "$work/railway.tar.gz" -C "$work"
+install -m 0755 "$work/railway" /usr/local/bin/railway
+
+# Ghostty terminfo and a server-side Nerd Font fallback for AstroNvim.
+tic -x -o /usr/share/terminfo /usr/local/share/tully-agent/assets/xterm-ghostty.terminfo
+fetch "https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONT_VERSION}/NerdFontsSymbolsOnly.zip" \
+    "$NERD_FONT_SHA256" "$work/nerd-symbols.zip"
+mkdir -p /usr/local/share/fonts/nerd-symbols
+unzip -q "$work/nerd-symbols.zip" -d /usr/local/share/fonts/nerd-symbols
+fc-cache -f
+
+# Preinstall the AstroNvim core so a new home does not need a first-launch download.
+home_seed=/usr/local/share/agent-home-seed
+mkdir -p "$home_seed/config/nvim" "$home_seed/data/nvim/lazy/lazy.nvim"
+sed -e "s/@ASTRONVIM_VERSION@/$ASTRONVIM_VERSION/g" -e "s/@LAZY_VERSION@/$LAZY_VERSION/g" \
+    /usr/local/share/tully-agent/assets/astronvim-init.lua > "$home_seed/config/nvim/init.lua"
+# Lazy records Git revisions in its lockfile, so its seed needs real Git metadata.
+git clone --filter=blob:none --branch "$LAZY_VERSION" https://github.com/folke/lazy.nvim.git "$home_seed/data/nvim/lazy/lazy.nvim"
+test "$(git -C "$home_seed/data/nvim/lazy/lazy.nvim" rev-parse HEAD)" = "$LAZY_COMMIT"
+export XDG_CONFIG_HOME="$home_seed/config" XDG_DATA_HOME="$home_seed/data"
+export XDG_STATE_HOME="$work/nvim-state" XDG_CACHE_HOME="$work/nvim-cache"
+nvim --headless '+Lazy! sync' '+lua if vim.v.errmsg ~= "" then print(vim.v.errmsg); vim.cmd("cquit 1") end' +qa
+nvim --headless '+lua for _,m in ipairs({"astrocore","astroui","astrolsp"}) do if not pcall(require,m) then vim.cmd("cquit 1") end end; if vim.v.errmsg ~= "" then print(vim.v.errmsg); vim.cmd("cquit 1") end' +qa
+
+PATH=/usr/local/share/agent-cli-seed/bin:$PATH PI_OFFLINE=1 PI_TELEMETRY=0 pi --version
+/usr/local/share/agent-cli-seed/bin/codex --version
+railway --version
+infocmp xterm-ghostty >/dev/null
+# Record versions without copying host inventory, user profiles, or credentials.
+dpkg-query -W -f='${Package}\t${Version}\n' > /usr/local/share/tully-agent/debian-package-versions.tsv

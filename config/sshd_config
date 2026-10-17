@@ -1,0 +1,23 @@
+Port 22
+ListenAddress 0.0.0.0
+HostKey /home/desktop/.local/state/sshd/ssh_host_ed25519_key
+PidFile /run/sshd.pid
+PermitRootLogin no
+AllowUsers desktop
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+UsePAM yes
+StrictModes yes
+AuthorizedKeysFile /run/sshd/authorized_keys .ssh/authorized_keys
+AllowTcpForwarding local
+GatewayPorts no
+X11Forwarding no
+UseDNS no
+ClientAliveInterval 60
+ClientAliveCountMax 3
+AcceptEnv LANG LC_*
+Subsystem sftp internal-sftp
+LogLevel INFO
