@@ -124,7 +124,7 @@ fi
 
 docker exec --user 1000:1000 -e PI_OFFLINE=1 -e PI_SKIP_VERSION_CHECK=1 "$first" bash -c '
 set -Eeuo pipefail
-for tool in codex pi node npm pnpm tsc tsx python python3 uv rustc cargo java javac mvn nvim nano tmux railway ssh sshfs tree-sitter kubectl talosctl docker docker-compose git gh rg fd fzf jq yq sops age pandoc pdftotext tesseract ffmpeg dot plantuml xelatex trash; do
+for tool in codex pi node npm pnpm tsc tsx python python3 uv rustc cargo java javac mvn nvim nano tmux railway ssh sshfs tree-sitter kubectl talosctl docker docker-compose git gh rg fd fzf jq yq sops age pandoc pdftotext tesseract ffmpeg dot plantuml xelatex trash soffice xdotool xprop xwininfo; do
     command -v "$tool" >/dev/null || { echo "Missing command: $tool"; exit 1; }
 done
 codex --version
@@ -163,7 +163,14 @@ pdf = Canvas(str(folder / "sample.pdf")); pdf.drawString(40, 40, "PDF smoke test
 plt.plot(np.arange(5)); plt.savefig(folder / "plot.png"); plt.close()
 assert all(path.stat().st_size > 100 for path in folder.iterdir())
 print("DOCX, PPTX, XLSX, PDF and plot generation passed.")
+from odf.opendocument import OpenDocumentText
+from odf.text import P
+odt = OpenDocumentText(); odt.text.addElement(P(text="LibreOffice ODT export smoke test")); odt.save(str(folder / "resume.odt"))
 PY
+/usr/bin/python3 -c "import PIL; print(\"Debian python3 Pillow\", PIL.__version__)"
+soffice --version
+soffice --headless --norestore --convert-to pdf --outdir /tmp/document-smoke /tmp/document-smoke/resume.odt
+pdftotext /tmp/document-smoke/resume.pdf - | grep -F "LibreOffice ODT export smoke test"
 compile_dir=$(mktemp -d /tmp/compiler-smoke.XXXXXX)
 printf "int main(void) { return 0; }\\n" > "$compile_dir/main.c"
 gcc "$compile_dir/main.c" -o "$compile_dir/c-test"

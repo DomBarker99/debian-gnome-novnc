@@ -16,6 +16,7 @@ Linux/amd64 Debian 13 with selected GNOME components, Firefox ESR, development S
 - Rust/Cargo, JDK 25, Maven, GCC/G++, Clang/LLVM, CMake, Ninja, GDB and LLDB, plus common development headers.
 - kubectl, talosctl, yq, jq, SOPS, age, Git/Git LFS, lazygit, delta, glow, ripgrep, fd and fzf.
 - Docker client and Compose, **not a Docker daemon or host socket**.
+- LibreOffice Writer and Calc (GUI and headless PDF export); Pillow for Debian's `/usr/bin/python3`.
 - PDF, Office-document, image, OCR, audio/video, diagram and practical LaTeX tools; man pages, locales, fonts, network diagnostics, archives and a trash utility.
 
 Sources: [APT packages](packages/apt.txt), [Python packages](packages/python.txt), [SDK/tool versions and checksums](versions.env), [installer](scripts/install-tools.sh), [AstroNvim seed](assets/astronvim-init.lua). Actual Debian versions are recorded in the image at `/usr/local/share/tully-agent/debian-package-versions.tsv`.
